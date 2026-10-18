@@ -12,6 +12,12 @@ jobs:
     timeout-minutes: 5
 
     steps:
+      - name: Restrict outbound network
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: block
+          disable-telemetry: true
+
       - name: Show runner information
         env:
           RUNNER_ENVIRONMENT: ${{ runner.environment }}
@@ -22,18 +28,26 @@ jobs:
           echo "OS: $RUNNER_OS"
           echo "Architecture: $RUNNER_ARCH"
           cat /etc/os-release
+
   verify-platform:
     needs: inspect-runner
     runs-on: ubuntu-24.04
     timeout-minutes: 5
 
     steps:
+      - name: Restrict outbound network
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: block
+          disable-telemetry: true
+
       - name: Verify required operating system
         run: |
           . /etc/os-release
           test "$ID" = "ubuntu"
           test "$VERSION_ID" = "24.04"
           echo "PASS: Ubuntu 24.04"
+
   check-network:
     needs: verify-platform
     runs-on: ubuntu-24.04
@@ -47,6 +61,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
           disable-telemetry: true
+
       - name: Check outbound HTTPS access
         run: |
           for url in https://github.com https://example.com; do

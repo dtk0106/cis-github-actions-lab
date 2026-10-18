@@ -22,3 +22,15 @@ jobs:
           echo "OS: $RUNNER_OS"
           echo "Architecture: $RUNNER_ARCH"
           cat /etc/os-release
+  verify-platform:
+    needs: inspect-runner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Verify required operating system
+        run: |
+          . /etc/os-release
+          test "$ID" = "ubuntu"
+          test "$VERSION_ID" = "24.04"
+          echo "PASS: Ubuntu 24.04"

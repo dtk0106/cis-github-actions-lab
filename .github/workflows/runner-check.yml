@@ -64,6 +64,12 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
+            api.github.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            get.anchore.io:443
+            grype.anchore.io:443
+            toolbox-data.anchore.io:443
           disable-telemetry: true
 
       - name: Check outbound HTTPS access

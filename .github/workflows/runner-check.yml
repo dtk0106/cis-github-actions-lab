@@ -34,3 +34,21 @@ jobs:
           test "$ID" = "ubuntu"
           test "$VERSION_ID" = "24.04"
           echo "PASS: Ubuntu 24.04"
+  check-network:
+    needs: verify-platform
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check outbound HTTPS access
+        run: |
+          for url in https://github.com https://example.com; do
+            echo "Checking $url"
+            if curl --head --silent --show-error \
+              --connect-timeout 10 --max-time 20 \
+              "$url" > /dev/null; then
+              echo "REACHABLE: $url"
+            else
+              echo "NOT REACHABLE: $url"
+            fi
+          done

@@ -6,8 +6,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   inspect-runner:
+    name: Inspect runner
     runs-on: ubuntu-24.04
     timeout-minutes: 5
 
@@ -32,6 +37,7 @@ jobs:
           cat /etc/os-release
 
   verify-platform:
+    name: Verify platform
     needs: inspect-runner
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -53,6 +59,7 @@ jobs:
           echo "PASS: Ubuntu 24.04"
 
   check-network:
+    name: Check network
     needs: verify-platform
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -80,6 +87,7 @@ jobs:
           done
 
   scan-runner:
+    name: Scan runner packages
     needs: check-network
     runs-on: ubuntu-24.04
     timeout-minutes: 15

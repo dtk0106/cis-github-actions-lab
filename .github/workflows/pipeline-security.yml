@@ -14,8 +14,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   scan-workflow-configuration:
+    name: Scan workflow configuration
     runs-on: ubuntu-24.04
     timeout-minutes: 10
 

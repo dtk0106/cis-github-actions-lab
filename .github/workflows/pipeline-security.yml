@@ -35,5 +35,5 @@ jobs:
         with:
           inputs: .github/workflows
           advanced-security: false
-          online-audits: false
+          online-audits: true
           persona: auditor

@@ -1,0 +1,33 @@
+name: CIS - Pipeline Input Output
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    env:
+      INPUT_MESSAGE: CIS pipeline lab
+      OUTPUT_FILE: output/message.txt
+
+    steps:
+      - name: Generate output from declared input
+        shell: bash
+        run: |
+          mkdir -p "$(dirname "$OUTPUT_FILE")"
+          printf '%s\n' "$INPUT_MESSAGE" > "$OUTPUT_FILE"
+          echo "Input: INPUT_MESSAGE"
+          echo "Output: $OUTPUT_FILE"
+
+      - name: Validate generated output
+        shell: bash
+        run: |
+          test -s "$OUTPUT_FILE"
+          printf '%s\n' "$INPUT_MESSAGE" | cmp - "$OUTPUT_FILE"
+          echo "PASS: output exists and matches the input"
+          sha256sum "$OUTPUT_FILE"

@@ -31,3 +31,11 @@ jobs:
           printf '%s\n' "$INPUT_MESSAGE" | cmp - "$OUTPUT_FILE"
           echo "PASS: output exists and matches the input"
           sha256sum "$OUTPUT_FILE"
+
+      - name: Store validated artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pipeline-message-${{ github.run_id }}
+          path: output/message.txt
+          if-no-files-found: error
+          retention-days: 7

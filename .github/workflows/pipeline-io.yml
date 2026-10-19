@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   generate-and-validate:
-    name: Generate and validate artifact
+    name: Generate and verify signed artifact
     runs-on: ubuntu-24.04
     timeout-minutes: 5
 
@@ -26,21 +26,67 @@ jobs:
         run: |
           mkdir -p "$(dirname "$OUTPUT_FILE")"
           printf '%s\n' "$INPUT_MESSAGE" > "$OUTPUT_FILE"
-          echo "Input: INPUT_MESSAGE"
-          echo "Output: $OUTPUT_FILE"
 
       - name: Validate generated output
         shell: bash
         run: |
           test -s "$OUTPUT_FILE"
           printf '%s\n' "$INPUT_MESSAGE" | cmp - "$OUTPUT_FILE"
-          echo "PASS: output exists and matches the input"
+          echo "PASS: output matches input"
           sha256sum "$OUTPUT_FILE"
 
-      - name: Store validated artifact
+      - name: Sign artifact with temporary lab key
+        shell: bash
+        run: |
+          umask 077
+          KEY_FILE="$RUNNER_TEMP/lab-signing-key.pem"
+          trap 'rm -f "$KEY_FILE"' EXIT
+
+          openssl genpkey -algorithm RSA \
+            -pkeyopt rsa_keygen_bits:3072 \
+            -out "$KEY_FILE" 2>/dev/null
+
+          openssl pkey -in "$KEY_FILE" \
+            -pubout -out output/lab-public-key.pem
+
+          openssl dgst -sha256 \
+            -sign "$KEY_FILE" \
+            -out output/message.txt.sig \
+            "$OUTPUT_FILE"
+
+          echo "PASS: artifact signed with temporary lab key"
+
+      - name: Verify original and reject modified copy
+        shell: bash
+        run: |
+          openssl dgst -sha256 \
+            -verify output/lab-public-key.pem \
+            -signature output/message.txt.sig \
+            "$OUTPUT_FILE"
+
+          echo "PASS: original signature verified"
+
+          MODIFIED_FILE="$RUNNER_TEMP/message-modified.txt"
+          cp "$OUTPUT_FILE" "$MODIFIED_FILE"
+          printf 'modified\n' >> "$MODIFIED_FILE"
+
+          if openssl dgst -sha256 \
+            -verify output/lab-public-key.pem \
+            -signature output/message.txt.sig \
+            "$MODIFIED_FILE" >/dev/null 2>&1; then
+            echo "::error::Modified file unexpectedly passed verification"
+            exit 1
+          fi
+
+          echo "PASS: modified file rejected"
+
+      - name: Store signed artifact and public key
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: pipeline-message-${{ github.run_id }}
-          path: output/message.txt
+          name: pipeline-signed-message-${{ github.run_id }}
+          path: |
+            output/message.txt
+            output/message.txt.sig
+            output/lab-public-key.pem
           if-no-files-found: error
           retention-days: 7
